@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class DataConstructUtil {
 
-	public static final int HOW_MANY_GAMES_YOU_WANT_TO_SET_UP = 3;
+	public static final int HOW_MANY_GAMES_YOU_WANT_TO_SET_UP = 2;
 
 	/**
 	 * 构建了5个比赛，其中有两组比赛是可以让球的，另外一個比賽
@@ -33,7 +33,10 @@ public class DataConstructUtil {
 
 			Game game = new Game(gameIdString, "主队" + i, "客队" + i, isLetPointEnabled);
 			game.setRateList(ratesList);
-
+			
+			if (i==2) {
+				game.setSure(true);
+			}
 			gamesList.add(game);
 
 			isLetPointEnabled = !isLetPointEnabled;

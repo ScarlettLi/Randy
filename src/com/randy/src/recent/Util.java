@@ -44,13 +44,20 @@ public class Util {
 	private Util() {
 	}
 
+	private static void clear() {
+		indexsArray = null;
+		choiceCombinationMap = new HashMap<Integer, List<Rate>>();
+		indexSetList = new ArrayList<List<Integer[]>>();
+	}
+
 	private static class UtilSingletonHolder {
 		public static final Util instance = new Util();
 	}
 
 	public static Util getInstance(List<Game> gameList) {
-		if (sourceGameList == null) {
+		if (gameList != sourceGameList) {
 			sourceGameList = gameList;
+			clear();
 			initChoiceCombinationAndChoices();
 			computeChoiceCombinationIndexSet();
 		}
@@ -71,6 +78,7 @@ public class Util {
 	}
 
 	/**
+	 * 这个方法不考虑胆
 	 * 
 	 * @return 返回所有比赛的所有的可能性组合的组合。如果是一共十场比赛，那么包括从1穿1，2穿1，3穿1，。。。，到10穿1。
 	 */
@@ -79,6 +87,49 @@ public class Util {
 		List<List<Rate>> finalResultList = new ArrayList<List<Rate>>();
 		computeChoiceCombinationBasedOnIndexSet(finalResultList);
 		return finalResultList;
+	}
+
+	/**
+	 * 这个方法考虑胆的比赛。解决这个问题的思路如下：首先过滤到没有设置未胆的比赛。然后把这些比赛的所有组合都得到（包括1串1,因为加上那个胆以后就是2串1了），
+	 * 
+	 * @return 返回所有比赛的所有的可能性组合的组合。
+	 */
+	public List<List<Rate>> getAllGameCombinationWithSure() {
+
+		if (sourceGameList == null || sourceGameList.size() == 0) {
+			return null;
+		}
+
+		Game gameSureGame = null;
+		for (Game game : sourceGameList) {
+
+			if (game.isSure()) {
+				gameSureGame = game;
+				System.out.println("breaking");
+				break;
+			}
+			System.out.println("next");
+		}
+
+		sourceGameList.remove(gameSureGame);
+		clear();
+		initChoiceCombinationAndChoices();
+		computeChoiceCombinationIndexSet();
+
+		List<List<Rate>> tempResult = getAllGameCombination();
+
+		if (tempResult == null) {
+			return tempResult;
+		}
+
+		// 加上胆的赔率数据
+		for (List<Rate> rateList : tempResult) {
+			for (Rate rate : gameSureGame.getRateList()) {
+				rateList.add(rate);
+			}
+		}
+
+		return tempResult;
 	}
 
 	/**
@@ -158,10 +209,10 @@ public class Util {
 		// Call the helper method with an empty prefix and the entire
 		// phone number as the remaining part.
 		List<Rate> rateList = new ArrayList<Rate>();
-		generateCombosHelper(rateList, indexArray, indexArray.length - 1, finalResultList);
+		generateCombinationHelper(rateList, indexArray, indexArray.length - 1, finalResultList);
 	}
 
-	private static void generateCombosHelper(List<Rate> rateList, Integer[] remaining, int remaintIndex,
+	private static void generateCombinationHelper(List<Rate> rateList, Integer[] remaining, int remaintIndex,
 			List<List<Rate>> finalResultList) {
 
 		// The current digit we are working with
@@ -183,7 +234,7 @@ public class Util {
 				List<Rate> newRatesList = new ArrayList<Rate>();
 				newRatesList.addAll(rateList);
 				newRatesList.add(choiceCombinationMap.get(digit).get(i));
-				generateCombosHelper(newRatesList, remaining, remaintIndex - 1, finalResultList);
+				generateCombinationHelper(newRatesList, remaining, remaintIndex - 1, finalResultList);
 			}
 		}
 
@@ -205,19 +256,35 @@ public class Util {
 		}
 	}
 
-	private static void combine(Integer[] a, Integer n, Integer[] b, Integer m, final Integer mFinal,
-			List<Integer[]> list) {
-		for (int i = n; i >= m; i--) {
-			b[m - 1] = i - 1;
-			if (m > 1) { // 递归求解
-				combine(a, i - 1, b, m - 1, mFinal, list);
+	/**
+	 * 从N个数里面选择出M个数的组合
+	 * 
+	 * @param sourceData
+	 *            N个源数据，作为数据传入进入
+	 * @param theLeftLengthOfSourceData
+	 *            源数据剩余的数据个数
+	 * @param choosenData
+	 *            用于存储已经选择了的数据
+	 * @param howManyLeftToBeChoosen
+	 *            还有多少个需要选择
+	 * @param howManyYouWantToChoose
+	 *            一共要选择多少个
+	 * @param resultList
+	 *            统计返回的结果
+	 */
+	private static void combine(Integer[] sourceData, Integer theLeftLengthOfSourceData, Integer[] choosenData,
+			Integer howManyLeftToBeChoosen, final Integer howManyYouWantToChoose, List<Integer[]> resultList) {
+		for (int i = theLeftLengthOfSourceData; i >= howManyLeftToBeChoosen; i--) {
+			choosenData[howManyLeftToBeChoosen - 1] = i - 1;
+			if (howManyLeftToBeChoosen > 1) { // 递归求解
+				combine(sourceData, i - 1, choosenData, howManyLeftToBeChoosen - 1, howManyYouWantToChoose, resultList);
 			} else { // 递归出口，当m == 1时, 输出一个组合序列
 
-				Integer[] combinations = new Integer[mFinal];
-				for (int j = 0; j <= mFinal - 1; j++) {
-					combinations[j] = a[b[j]];
+				Integer[] combinations = new Integer[howManyYouWantToChoose];
+				for (int j = 0; j <= howManyYouWantToChoose - 1; j++) {
+					combinations[j] = sourceData[choosenData[j]];
 				}
-				list.add(combinations);
+				resultList.add(combinations);
 			}
 		}
 	}
