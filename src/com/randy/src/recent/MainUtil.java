@@ -9,8 +9,16 @@ public class MainUtil {
 
 	public static void main(String[] args) {
 
-		List<List<Rate>> result = Util.getInstance(DataConstructUtil.getGamesList()).getAllGameCombination();
-		printResult(result);
+		List<List<Rate>> resultAll = Util.getInstance(DataConstructUtil.getGamesList())
+				.getAllGameCombinationWithoutOne();
+		System.out.println("**********所有的组合***********");
+		printResult(resultAll);
+		System.out.println("************2串1的组合*********");
+		List<List<Rate>> result2 = Util.getInstance(DataConstructUtil.getGamesList()).getGameCombinationByN(2);
+		printResult(result2);
+		System.out.println("***********3串1的组合**********");
+		List<List<Rate>> result3 = Util.getInstance(DataConstructUtil.getGamesList()).getGameCombinationByN(3);
+		printResult(result3);
 
 	}
 
